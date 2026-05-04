@@ -1120,8 +1120,10 @@ export const useGameStore = create((set, get) => ({
 
     get().addNotification(`Turn ${state.turn} ended. ${player === "player-1" ? "Crimson Dominion" : "Azure Coalition"} gained ${spGain} SP.`);
 
-    // Process AI turn for the next player
-    setTimeout(() => get().processAITurn(nextPlayer), 500);
+    // Process AI turn for P2 (always AI); P1 only if auto-play is active
+    if (nextPlayer === "player-2" || state.autoPlay) {
+      setTimeout(() => get().processAITurn(nextPlayer), 500);
+    }
   },
 
   // ── AI turn (parameterized for any player) ────────────────
