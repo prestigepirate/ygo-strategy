@@ -1,4 +1,4 @@
-import { useGameStore, getRegionOwner, getRegionCreatures, getRegionTraps, getCard, TERRAIN_BONUSES, PLAYER_COLORS, PLAYER_NAMES, isMainTowerRegion } from "../data/gameState";
+import { useGameStore, getRegionOwner, getRegionCreatures, getRegionTraps, getCard, TERRAIN_BONUSES, PLAYER_COLORS, PLAYER_NAMES } from "../data/gameState";
 import { getRegions, TERRAIN_COLORS } from "../data/regions";
 
 const G = { light: "#c8aa4e", mid: "#8b7630", dim: "#5a4a20" };
@@ -126,33 +126,6 @@ export default function RegionPanel({ regionId, onClose }) {
               </span>
             </div>
           </Section>
-
-          {/* Main tower HP */}
-          {isMainTowerRegion(regionId) && (() => {
-            const towerOwner = regionId === "crystal-lake" ? "player-1" : "player-2";
-            const hp = state.playerHP[towerOwner];
-            const hpPct = Math.round((hp / 8000) * 100);
-            const hpColor = hpPct > 50 ? "#44aa44" : hpPct > 25 ? "#c8aa22" : "#c44b3c";
-            return (
-              <Section title={`Main Tower — ${PLAYER_NAMES[towerOwner]}`}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                  <div style={{
-                    flex: 1, height: 8, background: "rgba(255,255,255,0.06)",
-                    borderRadius: 4, overflow: "hidden",
-                  }}>
-                    <div style={{
-                      width: `${hpPct}%`, height: "100%", background: hpColor,
-                      borderRadius: 4, transition: "width 0.5s",
-                      boxShadow: `0 0 6px ${hpColor}44`,
-                    }} />
-                  </div>
-                  <span style={{ color: hpColor, fontSize: "0.8rem", fontWeight: "bold", minWidth: 60, textAlign: "right" }}>
-                    {hp} / 8000
-                  </span>
-                </div>
-              </Section>
-            );
-          })()}
 
           {/* Terrain bonus */}
           <Section title="Terrain Effect — " subtitle={bonus.name}>

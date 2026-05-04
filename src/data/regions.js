@@ -2,6 +2,8 @@
 // Axial coords: q (column), r (row)
 // World conversion: x = size * (3/2 * q), z = size * (sqrt(3)/2 * q + sqrt(3) * r)
 
+import { BATTLEFIELD_REGIONS, BATTLEFIELD_META } from "./battlefieldMap";
+
 export const HEX_SIZE = 1.6;
 
 // ── 61 shared region IDs (radius-4 hexagon) ──────────────────
@@ -156,18 +158,28 @@ for (const [mapId, def] of Object.entries(MAP_GENERATORS)) {
   MAP_POOL[mapId] = { name: def.name, description: def.desc, regions };
 }
 
+// ── Map 6: Shattered Realm (battlefield map — currently the ONLY active map) ──
+MAP_POOL["shattered-realm"] = {
+  name: BATTLEFIELD_META.name,
+  description: BATTLEFIELD_META.description,
+  regions: BATTLEFIELD_REGIONS,
+};
+
 // All map IDs
 export const MAP_IDS = Object.keys(MAP_POOL);
 
 // Currently active map
-let activeMapId = MAP_IDS[0];
+let activeMapId = "shattered-realm"; // Force battlefield map only for now
 
 export function getActiveMapId() {
   return activeMapId;
 }
 
 export function pickRandomMap() {
-  const id = MAP_IDS[Math.floor(Math.random() * MAP_IDS.length)];
+  // TEMP: always use Shattered Realm (battlefield map)
+  // When re-enabling other maps, change to:
+  //   const id = MAP_IDS[Math.floor(Math.random() * MAP_IDS.length)];
+  const id = "shattered-realm";
   activeMapId = id;
   _coordSet = buildCoordSet();
   return id;
@@ -181,14 +193,14 @@ export function getRegions() {
   return getActiveMap().regions;
 }
 
-// ── Dark terrain colors ──────────────────────────────────────
+// ── Terrain colors (lighter for battlefield map visibility) ──
 export const TERRAIN_COLORS = {
-  plains:   "#5c4e38",
-  forest:   "#1a3a12",
-  mountain: "#3a3a40",
-  swamp:    "#2e1e3a",
-  water:    "#1a2e44",
-  volcanic: "#4a1a0a",
+  plains:   "#7a6a4a",
+  forest:   "#2a4a1e",
+  mountain: "#5a5a6a",
+  swamp:    "#4a3a5a",
+  water:    "#2a4666",
+  volcanic: "#6a2a1a",
 };
 
 // Convert axial hex coords to world position

@@ -1509,10 +1509,6 @@ export function getRegionOwner(state, regionId) {
   return getRegionController(state, regionId);
 }
 
-export function isMainTowerRegion(regionId) {
-  return false;
-}
-
 function hexDist(q1, r1, q2, r2) {
   const dq = q1 - q2;
   const dr = r1 - r2;

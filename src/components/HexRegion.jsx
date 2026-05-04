@@ -61,6 +61,7 @@ export default function HexRegion({
   p2Markers = 0,
 }) {
   const meshRef = useRef();
+  const _scaleVec = useRef(new THREE.Vector3());
   const [hoveredLocal, setHoveredLocal] = useState(false);
   const shape = useMemo(() => hexShape(HEX_SIZE * 0.9), []);
 
@@ -72,7 +73,7 @@ export default function HexRegion({
     if (meshRef.current) {
       const targetScale = active ? 1.08 : 1;
       meshRef.current.scale.lerp(
-        new THREE.Vector3(targetScale, targetScale, targetScale),
+        _scaleVec.current.set(targetScale, targetScale, targetScale),
         delta * 8
       );
     }

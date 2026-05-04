@@ -28,6 +28,7 @@ function creatureBaseScale(level) {
 
 export default function UnitToken({ creature, owner, position, index = 0, total = 1, isSelected, onSelect }) {
   const groupRef = useRef();
+  const _scaleVec = useRef(new THREE.Vector3());
   const [hovered, setHovered] = useState(false);
   const active = hovered || isSelected;
   const immobilized = useGameStore((s) => s.immobilized[creature.id]);
@@ -81,7 +82,7 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
     groupRef.current.position.y += (targetY - groupRef.current.position.y) * delta * 6;
     const targetScale = active ? s * 1.15 : s;
     groupRef.current.scale.lerp(
-      new THREE.Vector3(targetScale, targetScale, targetScale),
+      _scaleVec.current.set(targetScale, targetScale, targetScale),
       delta * 6
     );
   });

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Sky, Stars } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import * as THREE from "three";
 import HexRegion from "./HexRegion";
 import MapBridges from "./MapBridges";
 import ObsidianMarsh from "./ObsidianMarsh";
@@ -36,6 +37,12 @@ function CameraController({ focusTarget, aerialView }) {
   const savedPos = useRef(null);
   const savedTarget = useRef(null);
 
+  // Pre-allocated vectors to avoid per-frame garbage
+  const _aerialPos = useRef(new THREE.Vector3());
+  const _aerialTarget = useRef(new THREE.Vector3());
+  const _savedPos = useRef(new THREE.Vector3());
+  const _savedTarget = useRef(new THREE.Vector3());
+
   // Handle focus target snap
   useEffect(() => {
     if (focusTarget && controlsRef.current) {
@@ -65,27 +72,27 @@ function CameraController({ focusTarget, aerialView }) {
     if (aerialView) {
       const t = 1 - Math.exp(-delta * 4);
       camera.position.lerp(
-        { x: AERIAL_POS[0], y: AERIAL_POS[1], z: AERIAL_POS[2] },
+        _aerialPos.current.set(AERIAL_POS[0], AERIAL_POS[1], AERIAL_POS[2]),
         t
       );
       ctrl.target.lerp(
-        { x: AERIAL_TARGET[0], y: AERIAL_TARGET[1], z: AERIAL_TARGET[2] },
+        _aerialTarget.current.set(AERIAL_TARGET[0], AERIAL_TARGET[1], AERIAL_TARGET[2]),
         t
       );
     } else if (savedPos.current) {
       // Restore saved position
       const t = 1 - Math.exp(-delta * 4);
       camera.position.lerp(
-        { x: savedPos.current[0], y: savedPos.current[1], z: savedPos.current[2] },
+        _savedPos.current.set(savedPos.current[0], savedPos.current[1], savedPos.current[2]),
         t
       );
       ctrl.target.lerp(
-        { x: savedTarget.current[0], y: savedTarget.current[1], z: savedTarget.current[2] },
+        _savedTarget.current.set(savedTarget.current[0], savedTarget.current[1], savedTarget.current[2]),
         t
       );
       // Clear saved once close enough
       if (camera.position.distanceTo(
-        { x: savedPos.current[0], y: savedPos.current[1], z: savedPos.current[2] }
+        _savedPos.current.set(savedPos.current[0], savedPos.current[1], savedPos.current[2])
       ) < 0.05) {
         savedPos.current = null;
         savedTarget.current = null;
