@@ -78,6 +78,85 @@ function TowerHPBar({ towerId, position }) {
   );
 }
 
+// ── Summoning Circle Markers ──────────────────────────────
+const SUMMON_GLOW_COLORS = {
+  "player-1": "#c44b3c",
+  "player-2": "#5b8cc4",
+};
+
+function SummonCircles() {
+  const circles = useGameStore((s) => s.summonCircles);
+  const regions = getRegions();
+
+  return (
+    <>
+      {circles.map((sc, i) => {
+        const rgn = regions.find(r => r.q === sc.q && r.r === sc.r);
+        if (!rgn) return null;
+        const [x, , z] = hexToWorld(rgn.q, rgn.r);
+        const y = rgn.height + 0.15;
+        const color = SUMMON_GLOW_COLORS[sc.owner] || "#8844cc";
+        return (
+          <SummonCircleRing
+            key={`sc-${i}`}
+            position={[x, y, z]}
+            color={color}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function SummonCircleRing({ position, color }) {
+  const ringRef = useRef();
+  const materialRef = useRef();
+
+  const ringGeo = useMemo(() => {
+    const shape = new THREE.Shape();
+    const innerR = 1.1;
+    const outerR = 1.4;
+    // Open center ring
+    shape.absarc(0, 0, outerR, 0, Math.PI * 2, false);
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, innerR, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+    return new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, steps: 1 });
+  }, []);
+
+  useFrame((state) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.z += 0.003;
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.08;
+      ringRef.current.scale.setScalar(pulse);
+    }
+    if (materialRef.current) {
+      materialRef.current.opacity = 0.25 + Math.sin(state.clock.elapsedTime * 3) * 0.1;
+    }
+  });
+
+  return (
+    <group position={position} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Base ring */}
+      <mesh ref={ringRef} geometry={ringGeo}>
+        <meshBasicMaterial ref={materialRef} color={color} transparent opacity={0.28} side={THREE.DoubleSide} depthTest={true} />
+      </mesh>
+      {/* Inner dot markers (rune-like dots around the circle) */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const angle = (i / 6) * Math.PI * 2;
+        const rx = Math.cos(angle) * 1.25;
+        const rz = Math.sin(angle) * 1.25;
+        return (
+          <mesh key={`dot-${i}`} position={[rx, 0.03, rz]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshBasicMaterial color={color} transparent opacity={0.6} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 // ── Camera controller ──────────────────────────────────────
 const AERIAL_POS = [0, 32, 0.5];
 const AERIAL_TARGET = [0, 0, 0];
@@ -231,6 +310,9 @@ function MapScene({ selectedRegion, onSelectRegion, focusTarget, selectedUnit, o
           </group>
         );
       })}
+
+      {/* Summoning circle markers */}
+      <SummonCircles />
 
       {/* Unit tokens on regions */}
       {regions.map((region) => {

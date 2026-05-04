@@ -91,6 +91,15 @@ export const useGameStore = create((set, get) => ({
   towerMaxHP: { silver: 8000, gold: 8000 },
   // Hex region each tower sits on (axial coords match battlefield map)
   towerRegions: { silver: { q: -7, r: 0 }, gold: { q: 7, r: 0 } },
+  // Summoning circles — 2 per player, adjacent to their tower.
+  // Creatures can ONLY be deployed to these regions.
+  // [{ q, r, owner }]
+  summonCircles: [
+    { q: -6, r: 0,  owner: "player-1" },
+    { q: -7, r: -1, owner: "player-1" },
+    { q: 6,  r: 0,  owner: "player-2" },
+    { q: 7,  r: -1, owner: "player-2" },
+  ],
 
   // ── Player state ────────────────────────────────────────
   playerDeck: { "player-1": [], "player-2": [] },
@@ -218,6 +227,23 @@ export const useGameStore = create((set, get) => ({
     const controller = getRegionController(state, regionId);
     if (controller !== playerId) {
       get().addNotification(`You can only deploy to regions you control (${regionId} is controlled by ${controller || "neutral"}).`);
+      return false;
+    }
+
+    // Must deploy to a summoning circle belonging to the player
+    const region = getRegions().find(r => r.id === regionId);
+    if (!region) return false;
+    const circle = state.summonCircles.find(
+      sc => sc.q === region.q && sc.r === region.r && sc.owner === playerId
+    );
+    if (!circle) {
+      const circleNames = state.summonCircles
+        .filter(sc => sc.owner === playerId)
+        .map(sc => {
+          const rgn = getRegions().find(r => r.q === sc.q && r.r === sc.r);
+          return rgn?.name || `(${sc.q},${sc.r})`;
+        }).join(", ");
+      get().addNotification(`You can only deploy to your summoning circles: ${circleNames}.`);
       return false;
     }
 
@@ -1141,10 +1167,19 @@ export const useGameStore = create((set, get) => ({
     const newImmobilized = { ...state.immobilized };
     let spSpent = 0;
 
-    // Deploy at most 1 creature per turn
+    // Deploy at most 1 creature per turn to summoning circles
+    const summonCircleIds = state.summonCircles
+      .filter(sc => sc.owner === playerId)
+      .map(sc => {
+        const rgn = getRegions().find(r => r.q === sc.q && r.r === sc.r);
+        return rgn?.id;
+      })
+      .filter(Boolean);
     let aiSummons = 0;
-    for (const regionId of aiOwnedRegions) {
+    for (const regionId of summonCircleIds) {
       if (remainingSP <= 0 || aiSummons >= 1) break;
+      // Also verify the summoning circle is actually controlled by the AI
+      if (getRegionController(state, regionId) !== playerId) continue;
       const cardIdx = newHand.findIndex((cid) => {
         const card = getCard(cid);
         return card && card.type === "creature" && card.cost <= remainingSP;
