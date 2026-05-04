@@ -1,4 +1,4 @@
-import { useEffect, useRef, Suspense } from "react";
+import { useEffect, useRef, Suspense, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 
@@ -21,10 +21,16 @@ const KNOWN_MODELS = new Set([
 function ModelMesh({ creatureId, active, scale, onLoaded }) {
   const ref = useRef();
   const { scene } = useGLTF(`${import.meta.env.BASE_URL}models/${creatureId}.glb`);
+  const hasFiredLoaded = useRef(false);
+
+  const clonedScene = useMemo(() => scene.clone(), [scene]);
 
   useEffect(() => {
-    onLoaded?.();
-  }, []);
+    if (scene && !hasFiredLoaded.current) {
+      hasFiredLoaded.current = true;
+      onLoaded?.();
+    }
+  }, [scene, onLoaded]);
 
   useFrame((_, delta) => {
     if (ref.current && active) {
@@ -35,7 +41,7 @@ function ModelMesh({ creatureId, active, scale, onLoaded }) {
   return (
     <primitive
       ref={ref}
-      object={scene.clone()}
+      object={clonedScene}
       scale={0.22 * scale}
       position={[0, 0.18, 0]}
     />

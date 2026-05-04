@@ -33,7 +33,7 @@ export default function GameHUD() {
   const setSelectedHandCard = useGameStore((s) => s.setSelectedHandCard);
   const clearHandSelection = useGameStore((s) => s.clearHandSelection);
 
-  const handCards = hand.map((id) => getCard(id)).filter(Boolean);
+  const handCards = (hand || []).map((id) => getCard(id)).filter(Boolean);
   const selectedCard = selectedCardId ? getCard(selectedCardId) : null;
 
   const mins = Math.floor(gameTime / 60);

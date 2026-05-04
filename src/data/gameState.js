@@ -75,7 +75,7 @@ export const useGameStore = create((set, get) => ({
   // ── Game flow ───────────────────────────────────────────
   phase: "deploy",
   gameStarted: false,
-  activeMap: "shattered-realm",
+  activeMap: "ashen-wastes",
   turn: 1,
   currentPlayer: "player-1",
 
@@ -636,8 +636,17 @@ export const useGameStore = create((set, get) => ({
     const remainingTraps = (state.trapsSet[toRegionId] || []).filter(id => id !== trapId);
 
     let message;
+    let lpDamage = 0;
+    let bouncedCards = [];
+
     if (result.destroyed.length > 0) {
       message = `⚠ ${result.trapName} triggered! ${creature.name} was destroyed entering ${getRegions().find(r => r.id === toRegionId)?.name || toRegionId}.`;
+    } else if (result.reflectDamage) {
+      lpDamage = result.reflectDamage;
+      message = `⚠ ${result.trapName} triggered! ${creature.name}'s attack was reflected — its controller takes ${lpDamage} LP damage!`;
+    } else if (result.bounced && result.bounced.length > 0) {
+      bouncedCards = result.bounced;
+      message = `⚠ ${result.trapName} triggered! ${creature.name} was returned to its owner's hand!`;
     } else {
       message = `⚠ ${result.trapName} triggered but ${creature.name} survived!`;
     }
@@ -655,9 +664,30 @@ export const useGameStore = create((set, get) => ({
       newStationed[toRegionId] = [...(newStationed[toRegionId] || []), ...result.survivors];
     }
 
+    // Handle bounced cards — return to owner's hand
+    let newHand = { ...state.playerHand };
+    if (bouncedCards.length > 0) {
+      for (const bouncedId of bouncedCards) {
+        const bOwner = state.creatureOwners[bouncedId] || creatureOwner;
+        newHand[bOwner] = [...(newHand[bOwner] || []), bouncedId];
+      }
+    }
+
+    // Handle reflect LP damage
+    let newHP = { ...state.playerHP };
+    if (lpDamage > 0) {
+      const victim = creatureOwner !== "neutral" ? creatureOwner : "player-1";
+      const enemyId = victim === "player-1" ? "player-2" : "player-1";
+      newHP[victim] = Math.max(0, (newHP[victim] || 8000) - lpDamage);
+      // Determine actual controller — the one who SET the trap, not the mover
+      // Simplification: damage goes to the creature's owner (the one moving into the trap)
+    }
+
     set({
       stationedCreatures: newStationed,
       trapsSet: { ...state.trapsSet, [toRegionId]: remainingTraps },
+      playerHand: newHand,
+      playerHP: newHP,
       movesUsed: creatureOwner !== "neutral"
         ? { ...state.movesUsed, [creatureOwner]: (state.movesUsed[creatureOwner] || 0) + 1 }
         : state.movesUsed,
@@ -741,17 +771,9 @@ export const useGameStore = create((set, get) => ({
       else if (loserOwner === "player-2") damageToP2 += diff;
     }
 
-    // Survivors after battle
-    const p1Survivors = groups["player-1"] ? groups["player-1"].filter(c => !destroyed.includes(c.id)) : [];
-    const p2Survivors = groups["player-2"] ? groups["player-2"].filter(c => !destroyed.includes(c.id)) : [];
-
-    // Remove destroyed creatures
+    // Remove destroyed creatures (survivors remain — no need to re-add)
     const newStationed = { ...state.stationedCreatures };
     newStationed[regionId] = (newStationed[regionId] || []).filter(id => !destroyed.includes(id));
-
-    // Survivors stay in region
-    const survivorIds = [...p1Survivors.map(c => c.id), ...p2Survivors.map(c => c.id)];
-    newStationed[regionId] = [...(newStationed[regionId] || []), ...survivorIds];
 
     // Apply damage
     const newHP = { ...state.playerHP };
@@ -1187,7 +1209,7 @@ export const useGameStore = create((set, get) => ({
 
     // AI casts self/deck spells
     for (let i = newHand.length - 1; i >= 0; i--) {
-      if (remainingSP < 0) break;
+      if (remainingSP <= 0) break;
       const cid = newHand[i];
       const card = getCard(cid);
       if (!card || card.type !== "spell") continue;
@@ -1329,6 +1351,19 @@ export const useGameStore = create((set, get) => ({
       }
     }
 
+    // Apply accumulated state FIRST (before any early return)
+    set({
+      playerHand: { ...state.playerHand, [playerId]: newHand },
+      playerSP: { ...state.playerSP, [playerId]: remainingSP },
+      stationedCreatures: newStationed,
+      trapsSet: newTraps,
+      creatureOwners: newCreatureOwners,
+      equippedTo: newEquipped,
+      fieldSpells: newFieldSpells,
+      tempBuffs: newTempBuffs,
+      immobilized: newImmobilized,
+    });
+
     // Generate deck if empty
     if (state.playerDeck[playerId].length === 0 && newHand.length === 0) {
       const deckId = DECK_IDS[Math.floor(Math.random() * DECK_IDS.length)];
@@ -1347,18 +1382,6 @@ export const useGameStore = create((set, get) => ({
       }
       return;
     }
-
-    set({
-      playerHand: { ...state.playerHand, [playerId]: newHand },
-      playerSP: { ...state.playerSP, [playerId]: remainingSP },
-      stationedCreatures: newStationed,
-      trapsSet: newTraps,
-      creatureOwners: newCreatureOwners,
-      equippedTo: newEquipped,
-      fieldSpells: newFieldSpells,
-      tempBuffs: newTempBuffs,
-      immobilized: newImmobilized,
-    });
 
     for (const msg of movedNotifications) {
       get().addNotification(msg);

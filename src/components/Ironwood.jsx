@@ -107,8 +107,14 @@ function IronBoulder({ position, scale = 1 }) {
     return g;
   }, [scale]);
 
+  const rot = useMemo(() => [
+    Math.random() * 0.3,
+    Math.random() * Math.PI,
+    Math.random() * 0.3,
+  ], []);
+
   return (
-    <mesh position={position} rotation={[Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3]} geometry={geo}>
+    <mesh position={position} rotation={rot} geometry={geo}>
       <meshStandardMaterial color="#3a3530" roughness={0.2} metalness={0.75} />
     </mesh>
   );

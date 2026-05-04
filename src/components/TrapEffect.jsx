@@ -5,6 +5,7 @@ import * as THREE from "three";
 export default function TrapEffect({ position, regionHeight, trapColor = "#ff4444", active, onComplete }) {
   const groupRef = useRef();
   const elapsedRef = useRef(0);
+  const hasCompleted = useRef(false);
   const duration = 2.0;
 
   const particles = useMemo(() => {
@@ -25,30 +26,26 @@ export default function TrapEffect({ position, regionHeight, trapColor = "#ff444
     return data;
   }, []);
 
-  // Pre-create geometries for each particle
-  const meshes = useMemo(() =>
-    particles.map((p, i) => ({
-      key: i,
-      delay: p.delay,
-      speed: p.speed,
-      startAngle: p.startAngle,
-      startPhi: p.startPhi,
-      size: p.size,
-    })), [particles]);
-
   useFrame((_, delta) => {
     if (!active || !groupRef.current) return;
     elapsedRef.current += delta;
 
     if (elapsedRef.current > duration) {
-      onComplete?.();
+      if (!hasCompleted.current) {
+        hasCompleted.current = true;
+        onComplete?.();
+      }
       return;
     }
 
     const t = elapsedRef.current;
-    groupRef.current.children.forEach((mesh, i) => {
-      if (!mesh || i === 0) return; // skip flash ring at index 0
+    const children = groupRef.current.children;
+    // First child is the flash ring; remaining are particle meshes
+    for (let i = 1; i < children.length; i++) {
+      const mesh = children[i];
+      if (!mesh || !mesh.isMesh || !mesh.material) continue;
       const p = particles[i - 1];
+      if (!p) continue;
       const localT = Math.max(0, t - p.delay);
       const radius = localT * p.speed;
       const y = localT * (1.5 + p.speed * 0.3);
@@ -60,7 +57,7 @@ export default function TrapEffect({ position, regionHeight, trapColor = "#ff444
       );
       mesh.material.opacity = Math.max(0, 1 - localT / duration);
       mesh.scale.setScalar(Math.max(0.1, 1 - localT / duration));
-    });
+    }
   });
 
   if (!active) return null;
@@ -76,9 +73,9 @@ export default function TrapEffect({ position, regionHeight, trapColor = "#ff444
       </mesh>
 
       {/* Particles */}
-      {meshes.map((m) => (
-        <mesh key={m.key}>
-          <sphereGeometry args={[m.size, 6, 6]} />
+      {particles.map((p, i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[p.size, 6, 6]} />
           <meshBasicMaterial color={trapColor} transparent opacity={1} depthTest={false} />
         </mesh>
       ))}

@@ -119,14 +119,20 @@ function GlowTube({ curvePoints }) {
 
   if (curvePoints.length < 3) return null;
 
-  const curve = new THREE.CatmullRomCurve3(
-    curvePoints.map(p => new THREE.Vector3(p.x, p.y, p.z)),
-    true
-  );
+  const { curve, tubeArgs } = useMemo(() => {
+    const c = new THREE.CatmullRomCurve3(
+      curvePoints.map(p => new THREE.Vector3(p.x, p.y, p.z)),
+      true
+    );
+    return {
+      curve: c,
+      tubeArgs: [c, curvePoints.length * 1.5, 0.08, 8, true],
+    };
+  }, [curvePoints]);
 
   return (
     <mesh ref={ref} position={[0, 0.3, 0]}>
-      <tubeGeometry args={[curve, curvePoints.length * 1.5, 0.08, 8, true]} />
+      <tubeGeometry args={tubeArgs} />
       <meshStandardMaterial
         color="#6644cc"
         emissive="#8844ff"

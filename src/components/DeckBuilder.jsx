@@ -233,7 +233,7 @@ export default function DeckBuilder({ deck, onAddCard, onRemoveCard, onConfirm, 
             )}
             {(viewCard.type === "trap") && (
               <div style={{ marginTop: 10, fontSize: "0.76rem", color: "#b8456e" }}>
-                Trigger: {viewCard.trigger} · Effect: {viewCard.trapEffect}
+                Trigger: {viewCard.trigger || "?"} · Effect: {viewCard.trapEffect || "?"}
               </div>
             )}
             <p style={{ margin: "14px 0 0", fontSize: "0.78rem", color: TX2, lineHeight: 1.5 }}>

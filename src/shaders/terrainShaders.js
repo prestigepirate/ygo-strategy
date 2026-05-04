@@ -191,12 +191,12 @@ const WATER_FRAGMENT = /* glsl */ `
     float specMask = smoothstep(0.55, 0.75, h);
     float specStrength = specMask * 0.6;
 
-    // Fresnel — edges catch more light
+    // Fresnel — edges catch more light (use perturbed normal for wave detail)
+    vec3 N = perturbNormal(uv, height, 0.5);
     vec3 V = normalize(uCameraPos - vPos);
-    float fresnel = pow(1.0 - abs(dot(normalize(vNormal), V)), 3.0);
+    float fresnel = pow(1.0 - abs(dot(N, V)), 3.0);
     vec3 fresnelColor = vec3(0.15, 0.3, 0.55) * fresnel * 0.5;
 
-    vec3 N = perturbNormal(uv, height, 0.5);
     vec3 lit = applyLighting(waterColor, N, specStrength, 64.0);
 
     gl_FragColor = vec4(lit + fresnelColor, 0.88);
