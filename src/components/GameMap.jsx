@@ -114,8 +114,8 @@ function SummonCircleRing({ position, color }) {
 
   const ringGeo = useMemo(() => {
     const shape = new THREE.Shape();
-    const innerR = 1.1;
-    const outerR = 1.4;
+    const innerR = 0.45;
+    const outerR = 0.6;
     // Open center ring
     shape.absarc(0, 0, outerR, 0, Math.PI * 2, false);
     const hole = new THREE.Path();
@@ -144,8 +144,8 @@ function SummonCircleRing({ position, color }) {
       {/* Inner dot markers (rune-like dots around the circle) */}
       {[0, 1, 2, 3, 4, 5].map((i) => {
         const angle = (i / 6) * Math.PI * 2;
-        const rx = Math.cos(angle) * 1.25;
-        const rz = Math.sin(angle) * 1.25;
+        const rx = Math.cos(angle) * 0.52;
+        const rz = Math.sin(angle) * 0.52;
         return (
           <mesh key={`dot-${i}`} position={[rx, 0.03, rz]}>
             <sphereGeometry args={[0.06, 8, 8]} />

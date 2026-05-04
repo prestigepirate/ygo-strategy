@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
-import { useGameStore, PLAYER_COLORS } from "../data/gameState";
+import { useGameStore } from "../data/gameState";
 import CreatureModel from "./CreatureModel";
 import { getMovementAnim, clearMovementAnim } from "../data/movementAnims";
 
@@ -31,8 +31,6 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
   const spacing = 0.4 * s;
   const offsetX = total > 1 ? (index - (total - 1) / 2) * spacing : 0;
   const offsetZ = total > 1 ? 0.15 * s : 0;
-
-  const playerColor = PLAYER_COLORS[owner] || "#888888";
 
   const animRef = useRef(false);
 
@@ -74,8 +72,6 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
   });
 
   const ringRadius = 0.16 * s;
-  const pedestalTop = 0.17 * s;
-  const pedestalBot = 0.14 * s;
 
   return (
     <group
@@ -87,12 +83,6 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
     >
       {/* 3D model (glb) */}
       <CreatureModel creature={creature} active={active} scale={s} />
-
-      {/* Base pedestal */}
-      <mesh position={[0, 0.08 * s, 0]}>
-        <cylinderGeometry args={[pedestalBot, pedestalTop, 0.08 * s, 8]} />
-        <meshStandardMaterial color={playerColor} roughness={0.4} metalness={0.5} />
-      </mesh>
 
       {/* Level indicator pips */}
       <LevelPips level={creature.level || 4} ringRadius={ringRadius} scale={s} />
