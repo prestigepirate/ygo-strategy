@@ -68,13 +68,13 @@ export default function HexRegion({
   const terrainColor = TERRAIN_COLORS[region.terrain];
   const active = isHovered || hoveredLocal;
 
-  // Gentle hover bob
+  // Subtle hover lift
   useFrame((_, delta) => {
     if (meshRef.current) {
-      const targetScale = active ? 1.08 : 1;
+      const targetScale = active ? 1.025 : 1;
       meshRef.current.scale.lerp(
         _scaleVec.current.set(targetScale, targetScale, targetScale),
-        delta * 8
+        delta * 6
       );
     }
   });
