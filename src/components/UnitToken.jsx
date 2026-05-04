@@ -6,15 +6,6 @@ import { useGameStore, PLAYER_COLORS } from "../data/gameState";
 import CreatureModel from "./CreatureModel";
 import { getMovementAnim, clearMovementAnim } from "../data/movementAnims";
 
-const ELEMENT_COLORS = {
-  dark: "#6633aa",
-  light: "#ffdd88",
-  earth: "#aa8844",
-  water: "#4488dd",
-  fire: "#dd4422",
-  wind: "#88dd66",
-};
-
 function creatureBaseScale(level) {
   if (level <= 2) return 1.2;
   if (level <= 3) return 1.5;
@@ -41,12 +32,7 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
   const offsetX = total > 1 ? (index - (total - 1) / 2) * spacing : 0;
   const offsetZ = total > 1 ? 0.15 * s : 0;
 
-  const [modelLoaded, setModelLoaded] = useState(false);
   const playerColor = PLAYER_COLORS[owner] || "#888888";
-  const elementColor = ELEMENT_COLORS[creature.element] || "#ffffff";
-
-  // Level-derived aura intensity — higher levels glow more
-  const auraIntensity = 0.3 + (creature.level || 4) * 0.06;
 
   const animRef = useRef(false);
 
@@ -99,23 +85,8 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={() => setHovered(false)}
     >
-      {/* 3D model (glb) — procedural geometry shown only as fallback */}
-      <CreatureModel creature={creature} active={active} scale={s} onLoaded={() => setModelLoaded(true)} />
-
-      {!modelLoaded && (
-        <group>
-          {/* Procedural creature body */}
-          <mesh position={[0, 0.28 * s, 0]}>
-            <cylinderGeometry args={[0.06 * s, 0.12 * s, 0.24 * s, 10]} />
-            <meshStandardMaterial color={elementColor} roughness={0.3} metalness={0.4} emissive={elementColor} emissiveIntensity={active ? 0.4 : auraIntensity * 0.3} />
-          </mesh>
-          {/* Head / crystal */}
-          <mesh position={[0, 0.44 * s, 0]}>
-            <octahedronGeometry args={[0.09 * s, 0]} />
-            <meshStandardMaterial color={elementColor} roughness={0.15} metalness={0.3} emissive={elementColor} emissiveIntensity={active ? 0.6 : auraIntensity * 0.6} />
-          </mesh>
-        </group>
-      )}
+      {/* 3D model (glb) */}
+      <CreatureModel creature={creature} active={active} scale={s} />
 
       {/* Base pedestal */}
       <mesh position={[0, 0.08 * s, 0]}>
