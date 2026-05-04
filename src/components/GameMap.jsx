@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { OrbitControls, Sky, Stars } from "@react-three/drei";
+import { OrbitControls, Sky, Stars, Text } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import HexRegion from "./HexRegion";
@@ -24,6 +24,59 @@ import { getRegions, getActiveMapId, hexToWorld, getReachableHexes, getMovementR
 import { getMapObjects } from "../data/mapObjects";
 import { startMovementAnim } from "../data/movementAnims";
 import { useGameStore, getRegionOwner, getRegionCreatures, findCreatureRegion, PLAYER_COLORS, getCard, getCreature } from "../data/gameState";
+
+// ── Tower HP Bar (3D overlay) ──────────────────────────────
+const TOWER_WORLD = {
+  silver: [-16.8, 1.0, -9.7],
+  gold: [16.8, 1.0, 9.7],
+};
+
+function TowerHPBar({ towerId, position }) {
+  const hp = useGameStore((s) => s.towerHP?.[towerId] ?? 8000);
+  const maxHP = useGameStore((s) => s.towerMaxHP?.[towerId] ?? 8000);
+  const ratio = hp / maxHP;
+  const color = towerId === "silver" ? "#c0c0c0" : "#d4a017";
+  const barWidth = 1.0;
+
+  return (
+    <group position={[position[0], position[1] + 4.5, position[2]]}>
+      {/* HP background bar */}
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[barWidth, 0.12, 0.08]} />
+        <meshBasicMaterial color="#333333" />
+      </mesh>
+      {/* HP fill bar */}
+      <mesh position={[-(barWidth * (1 - ratio)) / 2, 0, 0]}>
+        <boxGeometry args={[barWidth * ratio, 0.1, 0.06]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      {/* HP text */}
+      <Text
+        position={[0, 0.2, 0]}
+        fontSize={0.2}
+        color={color}
+        anchorX="center"
+        anchorY="bottom"
+        outlineWidth={0.02}
+        outlineColor="#000000"
+      >
+        {hp}
+      </Text>
+      {/* Tower label */}
+      <Text
+        position={[0, -0.25, 0]}
+        fontSize={0.16}
+        color={color}
+        anchorX="center"
+        anchorY="top"
+        outlineWidth={0.02}
+        outlineColor="#000000"
+      >
+        {towerId === "silver" ? "🏰 Silver Tower" : "👑 Gold Tower"}
+      </Text>
+    </group>
+  );
+}
 
 // ── Camera controller ──────────────────────────────────────
 const AERIAL_POS = [0, 32, 0.5];
@@ -231,6 +284,10 @@ function MapScene({ selectedRegion, onSelectRegion, focusTarget, selectedUnit, o
 
       {/* Editor-placed hex regions (visible always, not just edit mode) */}
       <PlacedHexes />
+
+      {/* King tower HP bars */}
+      <TowerHPBar towerId="silver" position={TOWER_WORLD.silver} />
+      <TowerHPBar towerId="gold" position={TOWER_WORLD.gold} />
 
       {editMode && <Editor3D />}
 

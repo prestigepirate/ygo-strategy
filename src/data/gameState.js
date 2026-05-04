@@ -85,6 +85,13 @@ export const useGameStore = create((set, get) => ({
   apocalypseWave: false,    // true when gameTime <= 120
   apocalypseCreatures: {},  // { key: { name, art, atk, region, targetTower } }
 
+  // ── King tower positions (world coords) and HP ───────────
+  // Silver tower = P1's base (far west), Gold tower = P2's base (far east)
+  towerHP: { silver: 8000, gold: 8000 },
+  towerMaxHP: { silver: 8000, gold: 8000 },
+  // Hex region each tower sits on (axial coords match battlefield map)
+  towerRegions: { silver: { q: -7, r: 0 }, gold: { q: 7, r: 0 } },
+
   // ── Player state ────────────────────────────────────────
   playerDeck: { "player-1": [], "player-2": [] },
   playerHand: { "player-1": [], "player-2": [] },
@@ -178,6 +185,8 @@ export const useGameStore = create((set, get) => ({
       playerDeck: { ...state.playerDeck, "player-1": shuffled, "player-2": aiShuffled },
       playerHand: { ...state.playerHand, "player-1": hand, "player-2": aiHand },
       playerSP: { ...state.playerSP, "player-1": 7, "player-2": 7 },
+      playerHP: { "player-1": 8000, "player-2": 8000 },
+      towerHP: { silver: 8000, gold: 8000 },
       summonsUsed: { "player-1": 0, "player-2": 0 },
       movesUsed: { "player-1": 0, "player-2": 0 },
     });
@@ -628,6 +637,7 @@ export const useGameStore = create((set, get) => ({
 
       // Check for battle trigger
       get().checkBattle(toRegionId);
+      get().checkTowerAttack(toRegionId);
       return { triggered: false };
     }
 
@@ -700,6 +710,7 @@ export const useGameStore = create((set, get) => ({
     // Check for battle trigger if survivors made it
     if (result.survivors.length > 0) {
       get().checkBattle(toRegionId);
+      get().checkTowerAttack(toRegionId);
     }
 
     return { triggered: true, result, message };
@@ -816,6 +827,66 @@ export const useGameStore = create((set, get) => ({
     }
 
     return { results, damageToP1, damageToP2 };
+  },
+
+  // ── Tower attack check ───────────────────────────────────
+  // Called after movement into a region. If the region is a tower's home
+  // hex and the tower owner has no creatures defending, attacker deals
+  // ATK damage directly to the tower.
+  checkTowerAttack: (regionId) => {
+    const state = get();
+    const towerRegions = state.towerRegions;
+    // Find which tower (if any) owns this region
+    let towerId = null;
+    let towerOwner = null;
+    if (towerRegions.silver && towerRegions.silver.q !== undefined) {
+      const rgn = getRegions().find(r => r.id === regionId);
+      if (rgn && rgn.q === towerRegions.silver.q && rgn.r === towerRegions.silver.r) {
+        towerId = "silver"; towerOwner = "player-1";
+      } else if (rgn && rgn.q === towerRegions.gold.q && rgn.r === towerRegions.gold.r) {
+        towerId = "gold"; towerOwner = "player-2";
+      }
+    }
+    if (!towerId) return;
+
+    const creatures = (state.stationedCreatures[regionId] || [])
+      .map(id => getCreature(id)).filter(Boolean);
+    
+    // Group by owner
+    const friendly = creatures.filter(c => state.creatureOwners[c.id] === towerOwner);
+    const enemies = creatures.filter(c => state.creatureOwners[c.id] !== towerOwner);
+    
+    if (enemies.length === 0) return;
+    if (friendly.length > 0) return; // Defenders present — regular battle handles this
+
+    // Deal damage for each enemy creature on the tower
+    let totalDmg = 0;
+    const region = getRegions().find(r => r.id === regionId);
+    const terrain = region?.terrain || "plains";
+    let attackerNames = [];
+    for (const c of enemies) {
+      const atk = getEffectiveAtk(c, terrain, regionId);
+      totalDmg += atk;
+      attackerNames.push(c.name);
+    }
+    
+    const newTowerHP = { ...state.towerHP };
+    newTowerHP[towerId] = Math.max(0, newTowerHP[towerId] - totalDmg);
+    
+    set({ towerHP: newTowerHP });
+    
+    const towerName = towerId === "silver" ? "🏰 Silver King Tower" : "👑 Gold King Tower";
+    get().addNotification(
+      `💥 ${attackerNames.join(", ")} assault${attackerNames.length > 1 ? "" : "s"} ${towerName} for ${totalDmg} damage! (${newTowerHP[towerId]} HP remaining)`
+    );
+    
+    // Check tower destruction → game over
+    if (newTowerHP[towerId] <= 0) {
+      const loser = towerOwner;
+      const winner = towerOwner === "player-1" ? "player-2" : "player-1";
+      set({ playerHP: { ...state.playerHP, [loser]: 0 } });
+      get().addNotification(`🏆 ${towerName} has fallen! ${PLAYER_NAMES[winner]} wins!`);
+    }
   },
 
   // ── Auto-play mode ───────────────────────────────────────

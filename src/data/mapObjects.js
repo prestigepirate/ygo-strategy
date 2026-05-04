@@ -9,6 +9,10 @@ const MAP_OBJECTS = {
   "iron-ridges": [],
   "blightwood": [],
   "cinder-plains": [],
+  "shattered-realm": [
+    {"type":"king-base","owner":"silver","position":[-16.8,1.0,-9.7],"scale":[1,1,1],"rotation":[0,0,0],"id":"king-silver"},
+    {"type":"king-base","owner":"gold","position":[16.8,1.0,9.7],"scale":[1,1,1],"rotation":[0,0,0],"id":"king-gold"},
+  ],
 };
 
 export function getMapObjects(mapId) {

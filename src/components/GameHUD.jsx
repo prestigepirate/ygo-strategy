@@ -20,6 +20,8 @@ export default function GameHUD() {
   const sp = useGameStore((s) => s.playerSP["player-1"]);
   const hp = useGameStore((s) => s.playerHP["player-1"]);
   const enemyHP = useGameStore((s) => s.playerHP["player-2"]);
+  const towerHP = useGameStore((s) => s.towerHP);
+  const towerMaxHP = useGameStore((s) => s.towerMaxHP);
   const turn = useGameStore((s) => s.turn);
   const gameTime = useGameStore((s) => s.gameTime);
   const apocalypseWave = useGameStore((s) => s.apocalypseWave);
@@ -83,7 +85,7 @@ export default function GameHUD() {
         pointerEvents: "auto", zIndex: 10,
         boxShadow: `0 1px 12px rgba(0,0,0,0.5)`,
       }}>
-        {/* Left — HP + enemy HP */}
+        {/* Left — HP + enemy HP + Tower HP */}
         <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{
@@ -102,6 +104,20 @@ export default function GameHUD() {
             }} />
             <span style={{ color: "#5b8cc4", fontSize: "0.85rem" }}>
               Enemy: {enemyHP} LP
+            </span>
+          </div>
+          <span style={{ color: TX3, fontSize: "0.7rem" }}>│</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: "0.75rem" }}>🏰</span>
+            <span style={{ color: "#c0c0c0", fontSize: "0.75rem", fontWeight: 600 }}>
+              {towerHP?.silver ?? 8000}
+            </span>
+          </div>
+          <span style={{ color: TX3, fontSize: "0.7rem" }}>│</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: "0.75rem" }}>👑</span>
+            <span style={{ color: "#d4a017", fontSize: "0.75rem", fontWeight: 600 }}>
+              {towerHP?.gold ?? 8000}
             </span>
           </div>
         </div>
