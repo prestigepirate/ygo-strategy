@@ -197,7 +197,6 @@ function CameraController({ focusTarget, aerialView }) {
     if (!ctrl) return;
     const el = gl.domElement;
     const onWheel = (e) => {
-      if (!aerialView) return;
       // Raycast from mouse to ground plane
       raycaster.current.setFromCamera(
         new THREE.Vector2(mouse.current.x, mouse.current.y),
@@ -217,7 +216,7 @@ function CameraController({ focusTarget, aerialView }) {
     };
     el.addEventListener("wheel", onWheel, { passive: true });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [aerialView, camera, gl]);
+  }, [camera, gl]);
 
   // Handle focus target snap
   useEffect(() => {
