@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Sky, Stars, Text } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
