@@ -158,22 +158,66 @@ function SummonCircleRing({ position, color }) {
 }
 
 // ── Camera controller ──────────────────────────────────────
-const AERIAL_POS = [0, 32, 0.5];
+const AERIAL_POS = [0, 50, 0.5];
 const AERIAL_TARGET = [0, 0, 0];
 const DEFAULT_POS = [8, 10, 12];
 const DEFAULT_TARGET = [0, 1, 0];
 
 function CameraController({ focusTarget, aerialView }) {
   const controlsRef = useRef();
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const savedPos = useRef(null);
   const savedTarget = useRef(null);
+  const mouse = useRef({ x: 0, y: 0 });
+  const raycaster = useRef(new THREE.Raycaster());
 
-  // Pre-allocated vectors to avoid per-frame garbage
+  // Pre-allocated vectors
   const _aerialPos = useRef(new THREE.Vector3());
   const _aerialTarget = useRef(new THREE.Vector3());
   const _savedPos = useRef(new THREE.Vector3());
   const _savedTarget = useRef(new THREE.Vector3());
+  const _groundPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
+  const _intersection = useRef(new THREE.Vector3());
+  const _prevCamDist = useRef(0);
+
+  // Track mouse position
+  useEffect(() => {
+    const el = gl.domElement;
+    const onMove = (e) => {
+      mouse.current.x = (e.clientX / el.clientWidth) * 2 - 1;
+      mouse.current.y = -(e.clientY / el.clientHeight) * 2 + 1;
+    };
+    el.addEventListener("pointermove", onMove);
+    return () => el.removeEventListener("pointermove", onMove);
+  }, [gl]);
+
+  // Zoom-to-cursor wheel handler
+  useEffect(() => {
+    const ctrl = controlsRef.current;
+    if (!ctrl) return;
+    const el = gl.domElement;
+    const onWheel = (e) => {
+      if (!aerialView) return;
+      // Raycast from mouse to ground plane
+      raycaster.current.setFromCamera(
+        new THREE.Vector2(mouse.current.x, mouse.current.y),
+        camera
+      );
+      const hit = new THREE.Vector3();
+      const didHit = raycaster.current.ray.intersectPlane(
+        _groundPlane.current, hit
+      );
+      if (!didHit) return;
+
+      // Shift orbit target toward cursor position proportionally to zoom delta
+      const zoomAmount = e.deltaY * 0.002;
+      const target = ctrl.target;
+      const newTarget = target.clone().lerp(hit, Math.abs(zoomAmount) * 0.5);
+      ctrl.target.copy(newTarget);
+    };
+    el.addEventListener("wheel", onWheel, { passive: true });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [aerialView, camera, gl]);
 
   // Handle focus target snap
   useEffect(() => {
@@ -185,13 +229,11 @@ function CameraController({ focusTarget, aerialView }) {
     }
   }, [focusTarget, camera]);
 
-  // Handle aerial view toggle with smooth transition
+  // Save state when entering aerial view
   useEffect(() => {
     const ctrl = controlsRef.current;
     if (!ctrl) return;
-
     if (aerialView) {
-      // Save current position before going aerial
       savedPos.current = camera.position.toArray();
       savedTarget.current = ctrl.target.toArray();
     }
@@ -237,9 +279,9 @@ function CameraController({ focusTarget, aerialView }) {
       ref={controlsRef}
       enableDamping
       dampingFactor={0.08}
-      minDistance={2}
-      maxDistance={30}
-      maxPolarAngle={Math.PI / 2.3}
+      minDistance={3}
+      maxDistance={60}
+      maxPolarAngle={Math.PI / 2.1}
     />
   );
 }
