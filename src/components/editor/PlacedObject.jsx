@@ -7,7 +7,7 @@ import { TERRAIN_COLORS, HEX_SIZE } from "../../data/regions";
 import { PLAYER_COLORS } from "../../data/gameState";
 
 function ModelMesh({ assetId, scale }) {
-  const { scene } = useGLTF(`/models/${assetId}.glb`);
+  const { scene } = useGLTF(`${import.meta.env.BASE_URL}models/${assetId}.glb`);
   return (
     <primitive object={scene.clone()} scale={scale[0] * 0.22} position={[0, 0.2, 0]} />
   );

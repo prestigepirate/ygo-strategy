@@ -73,7 +73,7 @@ export default function AssetLibrary() {
             ids.map((id) => (
               <div
                 key={id}
-                onClick={() => selectAsset({ id, path: `/models/${id}.glb`, category: cat })}
+                onClick={() => selectAsset({ id, path: `${import.meta.env.BASE_URL}models/${id}.glb`, category: cat })}
                 style={{
                   padding: "4px 8px 4px 22px",
                   cursor: "pointer",

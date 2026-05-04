@@ -20,7 +20,7 @@ const KNOWN_MODELS = new Set([
 
 function ModelMesh({ creatureId, active, scale, onLoaded }) {
   const ref = useRef();
-  const { scene } = useGLTF(`/models/${creatureId}.glb`);
+  const { scene } = useGLTF(`${import.meta.env.BASE_URL}models/${creatureId}.glb`);
 
   useEffect(() => {
     onLoaded?.();

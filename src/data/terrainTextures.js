@@ -467,7 +467,7 @@ for (const t of Object.keys(GENERATORS)) {
 
 // ── Real diffuse texture (shared across all terrains) ────────
 const loader = new THREE.TextureLoader();
-const sharedDiffuse = loader.load("/textures/terrain/hex_diffuse.jpg");
+const sharedDiffuse = loader.load(`${import.meta.env.BASE_URL}textures/terrain/hex_diffuse.jpg`);
 sharedDiffuse.wrapS = THREE.RepeatWrapping;
 sharedDiffuse.wrapT = THREE.RepeatWrapping;
 sharedDiffuse.colorSpace = THREE.SRGBColorSpace;
