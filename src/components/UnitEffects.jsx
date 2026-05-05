@@ -1,41 +1,12 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { PLAYER_COLORS } from "../data/gameState";
+import GroundRing from "./GroundRing";
 
 const FACTION_COLORS = {
   "player-1": { main: "#4488ff", glow: "#66aaff", particle: "#88ccff" },
   "player-2": { main: "#ff5533", glow: "#ff7755", particle: "#ff9977" },
 };
-
-// ── Glow ring at unit base ──────────────────────────────────
-function GlowRing({ color, scale, brightness, pulse }) {
-  const ref = useRef();
-  const ringGeo = useMemo(() => {
-    const g = new THREE.RingGeometry(0.12 * scale, 0.18 * scale, 32);
-    return g;
-  }, [scale]);
-
-  useFrame((_, delta) => {
-    if (!ref.current) return;
-    const b = brightness + (pulse ? Math.sin(performance.now() * 0.005) * 0.15 : 0);
-    ref.current.material.opacity += (b - ref.current.material.opacity) * delta * 8;
-  });
-
-  return (
-    <mesh ref={ref} position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <primitive object={ringGeo} attach="geometry" />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={0.3}
-        side={THREE.DoubleSide}
-        depthTest={true}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-}
 
 // ── Selection light beam ────────────────────────────────────
 function SelectionBeam({ color, scale, visible }) {
@@ -136,7 +107,6 @@ export default function UnitEffects({
   isSelected,
 }) {
   const colors = FACTION_COLORS[owner] || FACTION_COLORS["player-1"];
-  const brightness = isSelected ? 0.7 : isHovered ? 0.5 : 0.25;
   const active = isHovered || isSelected;
 
   return (
@@ -144,12 +114,14 @@ export default function UnitEffects({
       {/* Subtle base disc for small units */}
       {scale < 2.0 && <BaseDisc scale={scale} />}
 
-      {/* Faction glow ring */}
-      <GlowRing
-        color={colors.glow}
-        scale={scale}
-        brightness={brightness}
-        pulse={active}
+      {/* Faction glow ring at unit base — premium pulsing */}
+      <GroundRing
+        radius={0.15 * scale}
+        theme={owner === "player-1" ? "friendly" : "enemy"}
+        pulseSpeed={active ? 1.5 : 0.6}
+        scaleRange={[0.96, 1.04]}
+        opacityRange={active ? [0.35, 0.65] : [0.12, 0.25]}
+        yOffset={0.02}
       />
 
       {/* Selection beam */}

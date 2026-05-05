@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useGameStore, PLAYER_COLORS } from "../data/gameState";
 import CreatureModel from "./CreatureModel";
 import UnitEffects from "./UnitEffects";
+import GroundRing from "./GroundRing";
 import { getMovementAnim, clearMovementAnim } from "../data/movementAnims";
 
 function creatureBaseScale(level) {
@@ -91,8 +92,27 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
       {/* Level indicator pips */}
       <LevelPips level={creature.level || 4} ringRadius={ringRadius} scale={s} />
 
-      {/* Selection ring — pulsing golden border */}
-      {isSelected && <PulseRing ringRadius={ringRadius} scale={s} />}
+      {/* Selection ring — premium pulsing gold with inner/outer glow */}
+      {isSelected && (
+        <GroundRing
+          radius={ringRadius * 1.3}
+          theme="selection"
+          pulseSpeed={1.2}
+          yOffset={0.02}
+        />
+      )}
+
+      {/* Hover ring — softer, faster pulse */}
+      {hovered && !isSelected && (
+        <GroundRing
+          radius={ringRadius * 1.2}
+          theme={owner === "player-1" ? "friendly" : "enemy"}
+          pulseSpeed={1.8}
+          scaleRange={[0.96, 1.04]}
+          opacityRange={[0.3, 0.55]}
+          yOffset={0.02}
+        />
+      )}
 
       {/* Immobilized indicator — red chain ring */}
       {immobilized && (
@@ -156,24 +176,4 @@ function LevelPips({ level, ringRadius, scale }) {
     );
   }
   return <group>{pips}</group>;
-}
-
-// ── Pulsing golden selection ring (MTG Arena style) ─────────
-function PulseRing({ ringRadius, scale }) {
-  const ref = useRef();
-
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      const pulse = 1 + Math.sin(clock.elapsedTime * 4) * 0.12;
-      ref.current.scale.setScalar(pulse);
-      ref.current.material.opacity = 0.7 + Math.sin(clock.elapsedTime * 4) * 0.3;
-    }
-  });
-
-  return (
-    <mesh ref={ref} position={[0, 0.08 * scale, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[ringRadius * 1.3, ringRadius * 1.45, 32]} />
-      <meshBasicMaterial color="#ffd700" side={THREE.DoubleSide} transparent opacity={0.8} depthTest={false} />
-    </mesh>
-  );
 }
