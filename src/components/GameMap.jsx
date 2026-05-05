@@ -5,6 +5,7 @@ import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import HexRegion from "./HexRegion";
 import MapBridges from "./MapBridges";
+import HexGridLines from "./HexGridLines";
 import ObsidianMarsh from "./ObsidianMarsh";
 import TheSpire from "./TheSpire";
 import CrystalLake from "./CrystalLake";
@@ -161,8 +162,8 @@ function SummonCircleRing({ position, color }) {
 // ── Camera controller ──────────────────────────────────────
 const AERIAL_POS = [0, 50, 0.5];
 const AERIAL_TARGET = [0, 0, 0];
-const DEFAULT_POS = [8, 10, 12];
-const DEFAULT_TARGET = [0, 1, 0];
+const DEFAULT_POS = [14, 12, 14];
+const DEFAULT_TARGET = [0, 0, 0];
 
 function CameraController({ focusTarget, aerialView }) {
   const controlsRef = useRef();
@@ -322,7 +323,8 @@ function MapScene({ selectedRegion, onSelectRegion, focusTarget, selectedUnit, o
         <meshStandardMaterial color="#040410" roughness={0.98} emissive="#050515" emissiveIntensity={0.1} />
       </mesh>
 
-      <gridHelper args={[30, 30, "#111122", "#111122"]} position={[0, -1.49, 0]} />
+      {/* Hex grid outlines — faint glowing cyan borders */}
+      <HexGridLines color="#334466" opacity={0.35} yOffset={0.02} />
 
       <MapBridges regions={regions} />
 
@@ -627,7 +629,7 @@ export default function GameMap() {
     <div style={{ width: "100vw", height: "100vh", background: "#000000" }}>
       <Canvas
         shadows
-        camera={{ position: [8, 10, 12], fov: 45 }}
+        camera={{ position: [14, 12, 14], fov: 45 }}
         gl={{ antialias: true }}
       >
         <MapScene
