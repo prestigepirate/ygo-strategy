@@ -259,9 +259,11 @@ export function getReachableHexes(fromQ, fromR, maxSteps) {
         visited.add(key);
         const region = getRegions().find((rgn) => rgn.q === nq && rgn.r === nr);
         if (region) {
+          // Only plains are passable — creatures stay on flat ground
+          if (region.terrain !== "plains") continue;
           result.push({ region, steps: step });
+          nextFrontier.push([nq, nr]);
         }
-        nextFrontier.push([nq, nr]);
       }
     }
     frontier = nextFrontier;
