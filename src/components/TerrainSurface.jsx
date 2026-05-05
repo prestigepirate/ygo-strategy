@@ -19,21 +19,27 @@ function makeHexShape(radius) {
 const HEX_RADIUS = HEX_SIZE * 0.89;
 const hexShape = makeHexShape(HEX_RADIUS);
 
-export default function TerrainSurface({ terrain, regionHeight }) {
-  const procTextures = useMemo(() => getTerrainTextures(terrain), [terrain]);
+export default function TerrainSurface({ terrain, regionHeight, overrideTerrain = null }) {
+  const effectiveTerrain = overrideTerrain || terrain;
+  const procTextures = useMemo(() => getTerrainTextures(effectiveTerrain), [effectiveTerrain]);
   const sharedDiffuse = getSharedDiffuse();
 
   const y = regionHeight + 0.04;
+
+  // Nyx-0 terrain uses higher emissive for Fracture glow
+  const isNyx = effectiveTerrain === "nyx0";
 
   return (
     <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <shapeGeometry args={[hexShape, 48]} />
       <meshStandardMaterial
-        map={sharedDiffuse}
-        normalMap={procTextures.normal}
-        roughnessMap={procTextures.roughness}
-        roughness={0.7}
-        metalness={0.05}
+        map={procTextures?.albedo || sharedDiffuse}
+        normalMap={procTextures?.normal}
+        roughnessMap={procTextures?.roughness}
+        roughness={isNyx ? 0.85 : 0.7}
+        metalness={isNyx ? 0.02 : 0.05}
+        emissive={isNyx ? "#112244" : undefined}
+        emissiveIntensity={isNyx ? 0.15 : undefined}
       />
     </mesh>
   );

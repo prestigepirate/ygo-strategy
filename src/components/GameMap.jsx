@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { OrbitControls, Sky, Stars, Text } from "@react-three/drei";
+import { OrbitControls, Text } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import HexRegion from "./HexRegion";
@@ -15,6 +15,7 @@ import UnitToken from "./UnitToken";
 import MoveTargets from "./MoveTargets";
 import TrapEffect from "./TrapEffect";
 import NotificationToast from "./NotificationToast";
+import NyxEnvironment from "./NyxEnvironment";
 import RegionPanel from "./RegionPanel";
 import Editor3D from "./editor/Editor3D";
 import MapEditorPanel from "./editor/MapEditorPanel";
@@ -297,22 +298,28 @@ function MapScene({ selectedRegion, onSelectRegion, focusTarget, selectedUnit, o
 
   return (
     <>
-      <ambientLight intensity={0.4} />
+      {/* Nyx-0: dark void sky, dead Earth, fog, ash, debris */}
+      <NyxEnvironment />
+
+      {/* Cold, low ambient — Nyx-0 is a dying lightless shard */}
+      <ambientLight intensity={0.06} color="#1a1a3a" />
+      {/* Cold rim key light from upper-left */}
       <directionalLight
-        position={[10, 18, 6]}
-        intensity={0.85}
+        position={[-8, 12, -4]}
+        intensity={0.4}
+        color="#8899cc"
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
-      <pointLight position={[-5, 3, -5]} intensity={0.2} color="#445566" />
-
-      <Sky sunPosition={[100, 60, 20]} turbidity={12} />
-      <Stars radius={60} depth={60} count={800} factor={5} saturation={0} fade speed={0.3} />
+      {/* Subtle Fracture glow fill from below */}
+      <pointLight position={[0, 2, 0]} intensity={0.15} color="#334477" />
+      {/* Warm Vermilion intrusion from right side */}
+      <pointLight position={[12, 4, 0]} intensity={0.12} color="#442211" />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]} receiveShadow>
         <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#050510" roughness={0.95} />
+        <meshStandardMaterial color="#040410" roughness={0.98} emissive="#050515" emissiveIntensity={0.1} />
       </mesh>
 
       <gridHelper args={[30, 30, "#111122", "#111122"]} position={[0, -1.49, 0]} />
@@ -338,6 +345,7 @@ function MapScene({ selectedRegion, onSelectRegion, focusTarget, selectedUnit, o
             ownerColor={ownerColor !== PLAYER_COLORS.neutral ? ownerColor : null}
             p1Markers={markers?.["player-1"] ?? 0}
             p2Markers={markers?.["player-2"] ?? 0}
+            nyxMode
           />
         );
       })}
@@ -347,7 +355,7 @@ function MapScene({ selectedRegion, onSelectRegion, focusTarget, selectedUnit, o
         const [x, , z] = hexToWorld(region.q, region.r);
         return (
           <group key={`terrain-${region.id}`} position={[x, 0, z]}>
-            <TerrainSurface terrain={region.terrain} regionHeight={region.height} />
+            <TerrainSurface terrain={region.terrain} regionHeight={region.height} overrideTerrain="nyx0" />
           </group>
         );
       })}

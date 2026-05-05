@@ -423,6 +423,76 @@ function genPlains(seed) {
 
 // ── Cache ────────────────────────────────────────────────────
 
+// ── Nyx-0: Dark cracked charcoal with Fracture vein glow ──────
+function genNyx0(seed) {
+  const [c, ctx] = makeCanvas();
+  const img = ctx.createImageData(SIZE, SIZE);
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const i = (y * SIZE + x) * 4;
+      const u = x / SIZE, v = y / SIZE;
+      const n = fbm(u * 8, v * 8, seed, 5);
+      const n2 = fbm(u * 5 + 3, v * 5 + 1, seed + 10, 4);
+      const n3 = fbm(u * 9 + 7, v * 9 + 5, seed + 20, 3);
+      // Deep charcoal base (near-black with subtle variation)
+      const base = 12 + n * 18 + n2 * 8;
+      const r = base + n3 * 6;
+      const g = base + n3 * 4;
+      const b = base + n3 * 10;
+
+      // Fracture veins — glowing cyan/purple cracks
+      const fracture = Math.max(0, (n2 - 0.58) * 4);
+      const veinColor = n3 > 0.5
+        ? [40 + fracture * 200, 60 + fracture * 180, 80 + fracture * 175] // cyan
+        : [60 + fracture * 150, 20 + fracture * 100, 80 + fracture * 175]; // purple
+
+      img.data[i] = Math.min(255, r + veinColor[0]);
+      img.data[i + 1] = Math.min(255, g + veinColor[1]);
+      img.data[i + 2] = Math.min(255, b + veinColor[2]);
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // Normal map
+  const [cn, ctxn] = makeCanvas();
+  const nm = ctxn.createImageData(SIZE, SIZE);
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const i = (y * SIZE + x) * 4;
+      const u = x / SIZE, v = y / SIZE;
+      const eps = 1 / SIZE;
+      const hL = fbm(u - eps, v, seed, 5);
+      const hR = fbm(u + eps, v, seed, 5);
+      const hD = fbm(u, v - eps, seed, 5);
+      const hU = fbm(u, v + eps, seed, 5);
+      const s = 5;
+      nm.data[i] = Math.floor(((hR - hL) * s * 0.5 + 0.5) * 255);
+      nm.data[i + 1] = Math.floor(((hU - hD) * s * 0.5 + 0.5) * 255);
+      nm.data[i + 2] = 255;
+      nm.data[i + 3] = 255;
+    }
+  }
+  ctxn.putImageData(nm, 0, 0);
+
+  // Roughness — matte cracked surface
+  const [cr, ctxr] = makeCanvas();
+  const rm = ctxr.createImageData(SIZE, SIZE);
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const i = (y * SIZE + x) * 4;
+      const u = x / SIZE, v = y / SIZE;
+      const n = fbm(u * 6, v * 6, seed, 4);
+      const vR = 170 + n * 50;
+      rm.data[i] = rm.data[i + 1] = rm.data[i + 2] = vR;
+      rm.data[i + 3] = 255;
+    }
+  }
+  ctxr.putImageData(rm, 0, 0);
+
+  return { albedo: c, normal: cn, roughness: cr };
+}
+
 const GENERATORS = {
   volcanic: genVolcanic,
   water: genWater,
@@ -430,6 +500,7 @@ const GENERATORS = {
   swamp: genSwamp,
   mountain: genMountain,
   plains: genPlains,
+  nyx0: genNyx0,
 };
 
 // Eagerly preload all textures at module init (sync, no suspense)
