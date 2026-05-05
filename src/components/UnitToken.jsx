@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
-import { useGameStore } from "../data/gameState";
+import { useGameStore, PLAYER_COLORS } from "../data/gameState";
 import CreatureModel from "./CreatureModel";
 import { getMovementAnim, clearMovementAnim } from "../data/movementAnims";
 
@@ -81,8 +81,61 @@ export default function UnitToken({ creature, owner, position, index = 0, total 
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={() => setHovered(false)}
     >
-      {/* 3D model (glb) — stripped all effects to isolate the block */}
+      {/* 3D model (glb) */}
       <CreatureModel creature={creature} active={active} scale={s} />
+
+      {/* Level indicator pips */}
+      <LevelPips level={creature.level || 4} ringRadius={ringRadius} scale={s} />
+
+      {/* Selection ring */}
+      {isSelected && (
+        <mesh position={[0, 0.08 * s, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[ringRadius * 1.3, ringRadius * 1.45, 32]} />
+          <meshBasicMaterial color="#ffd700" side={THREE.DoubleSide} />
+        </mesh>
+      )}
+
+      {/* Immobilized indicator — red chain ring */}
+      {immobilized && (
+        <mesh position={[0, 0.06 * s, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[ringRadius * 1.15, ringRadius * 1.25, 16]} />
+          <meshBasicMaterial color="#ff4444" side={THREE.DoubleSide} transparent opacity={0.7} />
+        </mesh>
+      )}
+
+      {/* Buff indicator — green glow sphere */}
+      {buff && buff.atk > 0 && (
+        <mesh position={[0, 0.52 * s, 0]}>
+          <sphereGeometry args={[0.04 * s, 8, 8]} />
+          <meshBasicMaterial color="#44ff44" />
+        </mesh>
+      )}
+
+      {/* Creature name floating above */}
+      <Text
+        position={[0, 0.55 * s, 0]}
+        fontSize={0.08 * s}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="bottom"
+        outlineWidth={0.015}
+        outlineColor="#000000"
+      >
+        {creature.name}
+      </Text>
+
+      {/* ATK / DEF stats */}
+      <Text
+        position={[0, 0.48 * s, 0]}
+        fontSize={0.09 * s}
+        color={buff ? "#44ff44" : "#ffcc66"}
+        anchorX="center"
+        anchorY="bottom"
+        outlineWidth={0.01}
+        outlineColor="#000000"
+      >
+        {buff ? `${creature.atk + buff.atk} / ${creature.def}` : `${creature.atk} / ${creature.def}`}
+      </Text>
     </group>
   );
 }
